@@ -2,7 +2,6 @@
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
-echo "97.64.109.6 mb3admin.com  *.mb3admin.com" >>/etc/hosts
 sh_ver='1.4.2'
 github='https://raw.githubusercontent.com/AmuyangA/public/master'
 new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
