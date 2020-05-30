@@ -220,22 +220,9 @@ install_v2ray(){
 	echo -e "${Tip}请务必记录以上信息，因为关闭SSH后你再也看不到它了！"
 }
 echo -e "\n${Tip}安装直连V2Ray之后，GCS将无法再进行SSH连接！"
-read -p "是否启动BBR，安装6000端口直连V2Ray?[y:是 n:下一步](默认:y)：" num
-[ -z $num ] && num='y'
+read -p "是否启动BBR，安装6000端口直连V2Ray?[y:是 n:结束](默认:n)：" num
+[ -z $num ] && num='n'
 if [[ $num == 'y' ]]; then
 	install_v2ray
 fi
 
-donation_developer(){
-	yello_font '您的支持是作者更新和完善脚本的动力！'
-	yello_font '请访问以下网址扫码捐赠：'
-	green_font "[支付宝] \c" && white_font "${github}/donation/alipay.jpg"
-	green_font "[微信]   \c" && white_font "${github}/donation/wechat.png"
-	green_font "[银联]   \c" && white_font "${github}/donation/unionpay.png"
-	green_font "[QQ]     \c" && white_font "${github}/donation/qq.png"
-}
-echo && read -p "是否捐赠作者?[y:是 n:退出脚本](默认:y)：" num
-[ -z $num ] && num='y'
-if [[ $num == 'y' ]]; then
-	donation_developer
-fi
