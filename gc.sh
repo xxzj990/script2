@@ -220,8 +220,8 @@ install_v2ray(){
 	echo -e "${Tip}请务必记录以上信息，因为关闭SSH后你再也看不到它了！"
 }
 echo -e "\n${Tip}安装直连V2Ray之后，GCS将无法再进行SSH连接！"
-read -p "是否启动BBR，安装6000端口直连V2Ray?[y:是 n:结束](默认:n)：" num
-[ -z $num ] && num='n'
+read -p "是否启动BBR，安装6000端口直连V2Ray?[y:是 n:结束](默认:y)：" num
+[ -z $num ] && num='y'
 if [[ $num == 'y' ]]; then
 	install_v2ray
 fi
