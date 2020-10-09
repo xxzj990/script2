@@ -367,6 +367,8 @@ function install_typecho(){
     green "=============="
     green "安装php相关完毕，开始下载typecho"
     green "=============="
+    systemctl start php7.2-fpm.service
+    systemctl enable php7.2-fpm.service
     #设置伪装站
     rm -rf /usr/share/nginx/html/*
     cd /usr/share/nginx/html/
