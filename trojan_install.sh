@@ -162,6 +162,19 @@ http {
         server_name  $your_domain;
         root /usr/share/nginx/html;
         index index.php index.html index.htm;
+	#typecho所需配置
+	if (!-e \$request_filename) {
+	    rewrite ^(.*)\$ /index.php\$1 last;
+	}
+	location ~  .*\.php(\/.*)*\$ {
+	    #支持pathinfo的关键配置
+	    fastcgi_split_path_info ^(.+?\.php)(/.*)\$;
+	    #php-fpm的监听端口
+	    fastcgi_pass unix:/var/run/php/php7.2-fpm.sock; 
+	    fastcgi_index  index.php;
+	    fastcgi_param  SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
+	    include        fastcgi_params;
+	}    
     }
 }
 EOF
