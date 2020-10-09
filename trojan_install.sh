@@ -168,8 +168,8 @@ EOF
 	#设置伪装站
 	rm -rf /usr/share/nginx/html/*
 	cd /usr/share/nginx/html/
-	wget https://github.com/V2RaySSR/Trojan/raw/master/web.zip
-    	unzip web.zip
+	wget https://github.com/dzhl/script/raw/master/typecho-1.1-17.10.30-release.zip
+    	unzip typecho-1.1-17.10.30-release.zip
 	systemctl stop nginx
 	sleep 5
 	#申请https证书
