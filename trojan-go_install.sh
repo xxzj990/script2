@@ -126,10 +126,6 @@ fi
 $systemPackage -y install  nginx wget unzip zip curl tar >/dev/null 2>&1
 systemctl enable nginx
 systemctl stop nginx
-green "======================="
-blue "请输入绑定到本VPS的域名"
-green "======================="
-read your_domain
 real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
 local_addr=`curl ipv4.icanhazip.com`
 if [ $real_addr == $local_addr ] ; then
@@ -161,20 +157,7 @@ http {
         listen       80;
         server_name  $your_domain;
         root /usr/share/nginx/html;
-        index index.php index.html index.htm;
-	#typecho所需配置
-	if (!-e \$request_filename) {
-	    rewrite ^(.*)\$ /index.php\$1 last;
-	}
-	location ~  .*\.php(\/.*)*\$ {
-	    #支持pathinfo的关键配置
-	    fastcgi_split_path_info ^(.+?\.php)(/.*)\$;
-	    #php-fpm的监听端口
-	    fastcgi_pass unix:/var/run/php/php7.2-fpm.sock; 
-	    fastcgi_index  index.php;
-	    fastcgi_param  SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
-	    include        fastcgi_params;
-	}    
+        index index.php index.html index.htm;    
     }
 }
 EOF
@@ -209,10 +192,6 @@ fi
 
 
 function install_trojan(){
-green "======================="
-blue "请输入绑定到本VPS的域名"
-green "======================="
-read your_domain
 real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
 local_addr=`curl ipv4.icanhazip.com`
 if [ $real_addr == $local_addr ] ; then
@@ -455,7 +434,48 @@ function install_PHPAndTypecho(){
     green "开始安装php相关"
     green "=============="
     $systemPackage -y install  install php7.2-fpm  php7.2-xml php7.2-xmlrpc php7.2-sqlite3 php7.2-mbstring php-memcached php7.2-curl php7.2-gd >/dev/null 2>&1
-    cat > ${systempwd}php7.2-fpm.service <<-EOF
+    cat > /etc/nginx/nginx.conf <<-EOF
+user  root;
+worker_processes  1;
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+events {
+    worker_connections  1024;
+}
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+                      '\$status \$body_bytes_sent "\$http_referer" '
+                      '"\$http_user_agent" "\$http_x_forwarded_for"';
+    access_log  /var/log/nginx/access.log  main;
+    sendfile        on;
+    #tcp_nopush     on;
+    keepalive_timeout  120;
+    client_max_body_size 20m;
+    #gzip  on;
+    server {
+        listen       80;
+        server_name  $your_domain;
+        root /usr/share/nginx/html;
+        index index.php index.html index.htm;
+	#typecho所需配置
+	if (!-e \$request_filename) {
+	    rewrite ^(.*)\$ /index.php\$1 last;
+	}
+	location ~  .*\.php(\/.*)*\$ {
+	    #支持pathinfo的关键配置
+	    fastcgi_split_path_info ^(.+?\.php)(/.*)\$;
+	    #php-fpm的监听端口
+	    fastcgi_pass unix:/var/run/php/php7.2-fpm.sock; 
+	    fastcgi_index  index.php;
+	    fastcgi_param  SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
+	    include        fastcgi_params;
+	}    
+    }
+}
+EOF
+cat > ${systempwd}php7.2-fpm.service <<-EOF
 [Unit]
 Description=The PHP 7.2 FastCGI Process Manager
 Documentation=man:php-fpm7.2(8)
@@ -496,6 +516,34 @@ function remove_PHPAndTypecho(){
     else
 	apt autoremove -y php7.2-*
     fi
+cat > /etc/nginx/nginx.conf <<-EOF
+user  root;
+worker_processes  1;
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+events {
+    worker_connections  1024;
+}
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+                      '\$status \$body_bytes_sent "\$http_referer" '
+                      '"\$http_user_agent" "\$http_x_forwarded_for"';
+    access_log  /var/log/nginx/access.log  main;
+    sendfile        on;
+    #tcp_nopush     on;
+    keepalive_timeout  120;
+    client_max_body_size 20m;
+    #gzip  on;
+    server {
+        listen       80;
+        server_name  $your_domain;
+        root /usr/share/nginx/html;
+        index index.php index.html index.htm;    
+    }
+}
+EOF
     rm -rf /usr/share/nginx/html/*
     green "=============="
     green "php和Typecho删除完毕"
@@ -572,3 +620,7 @@ start_menu(){
 }
 
 start_menu
+green "======================="
+blue "请输入绑定到本VPS的域名"
+green "======================="
+read your_domain
