@@ -398,20 +398,18 @@ function remove_nginx(){
     red "================================"
     red "即将卸载nginx,同时卸载trojan"
     red "================================"
-    systemctl stop trojan-go
-    systemctl disable trojan-go
     rm -f ${systempwd}trojan-go.service
     if [ "$release" == "centos" ]; then
         yum remove -y nginx
     else
         apt autoremove -y nginx
     fi
-    rm -rf /usr/src/trojan*
     rm -rf /usr/share/nginx
     rm -rf /etc/nginx
     green "=============="
-    green "nginx和trojan删除完毕"
+    green "nginx删除完毕"
     green "=============="
+    remove_trojan()
 }
 function remove_trojan(){
     red "================================"
