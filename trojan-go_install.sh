@@ -40,7 +40,7 @@ elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
     systempwd="/usr/lib/systemd/system/"
 fi
 
-function install_trojan(){
+function install_nginx(){
 systemctl stop nginx
 $systemPackage -y install net-tools socat
 Port80=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80`
@@ -134,7 +134,7 @@ real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
 local_addr=`curl ipv4.icanhazip.com`
 if [ $real_addr == $local_addr ] ; then
 	green "=========================================="
-	green "       域名解析正常，开始安装trojan"
+	green "       域名解析正常，开始配置nginx以及更新证书"
 	green "=========================================="
 	sleep 1s
 cat > /etc/nginx/nginx.conf <<-EOF
@@ -189,6 +189,37 @@ EOF
         --fullchain-file /usr/src/trojan-cert/fullchain.cer
 	if test -s /usr/src/trojan-cert/fullchain.cer; then
 	systemctl start nginx
+        
+	else
+        red "==================================="
+	red "https证书没有申请成果，自动安装失败"
+	green "不要担心，你可以手动修复证书申请"
+	green "1. 重启VPS"
+	green "2. 重新执行脚本，使用修复证书功能"
+	red "==================================="
+	fi
+	
+else
+	red "================================"
+	red "域名解析地址与本VPS IP地址不一致"
+	red "本次安装失败，请确保域名解析正常"
+	red "================================"
+fi
+}
+
+
+function install_trojan(){
+green "======================="
+blue "请输入绑定到本VPS的域名"
+green "======================="
+read your_domain
+real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
+local_addr=`curl ipv4.icanhazip.com`
+if [ $real_addr == $local_addr ] ; then
+	green "=========================================="
+	green "       域名解析正常，开始安装trojan"
+	green "=========================================="
+	sleep 1s
         cd /usr/src
 	green "======================="
         blue "打开https://github.com/p4gefau1t/trojan-go/releases，最新版本号，输入版本号，不需要输入v"
@@ -210,93 +241,143 @@ EOF
 	rm -rf /usr/src/trojan-go/config.json
 	cat > /usr/src/trojan-go/config.json <<-EOF
 {
-    "run_type": "server",
-    "local_addr": "0.0.0.0",
-    "local_port": 443,
-    "remote_addr": "127.0.0.1",
-    "remote_port": 80,
-    "password": [
-        "$trojan_passwd"
+  "run_type": "server",
+  "local_addr": "0.0.0.0",
+  "local_port": 443,
+  "remote_addr": "127.0.0.1",
+  "remote_port": 80,
+  "log_level": 1,
+  "log_file": "",
+  "password": ["$trojan_passwd"],
+  "disable_http_check": false,
+  "udp_timeout": 60,
+  "ssl": {
+    "verify": true,
+    "verify_hostname": true,
+    "cert": "/usr/src/trojan-cert/fullchain.cer",
+    "key": "/usr/src/trojan-cert/private.key",
+    "key_password": "",
+    "cipher": "",
+    "curves": "",
+    "prefer_server_cipher": false,
+    "sni": "$your_domain",
+    "alpn": [
+      "http/1.1"
     ],
-    "log_level": 1,
+    "session_ticket": true,
+    "reuse_session": true,
+    "plain_http_response": "",
+    "fallback_addr": "",
+    "fallback_port": 0,
+    "fingerprint": "firefox"
+  },
+  "tcp": {
+    "no_delay": true,
+    "keep_alive": true,
+    "prefer_ipv4": false
+  },
+  "mux": {
+    "enabled": false,
+    "concurrency": 8,
+    "idle_timeout": 60
+  },
+  "router": {
+    "enabled": false,
+    "bypass": [],
+    "proxy": [],
+    "block": [],
+    "default_policy": "proxy",
+    "domain_strategy": "as_is",
+    "geoip": "/usr/src/trojan-go/geoip.dat",
+    "geosite": "/usr/src/trojan-go/geosite.dat"
+  },
+  "websocket": {
+    "enabled": false,
+    "path": "",
+    "host": ""
+  },
+  "shadowsocks": {
+    "enabled": false,
+    "method": "AES-128-GCM",
+    "password": ""
+  },
+  "transport_plugin": {
+    "enabled": false,
+    "type": "",
+    "command": "",
+    "option": "",
+    "arg": [],
+    "env": []
+  },
+  "forward_proxy": {
+    "enabled": false,
+    "proxy_addr": "",
+    "proxy_port": 0,
+    "username": "",
+    "password": ""
+  },
+  "mysql": {
+    "enabled": false,
+    "server_addr": "localhost",
+    "server_port": 3306,
+    "database": "",
+    "username": "",
+    "password": "",
+    "check_rate": 60
+  },
+  "api": {
+    "enabled": false,
+    "api_addr": "",
+    "api_port": 0,
     "ssl": {
-        "cert": "/usr/src/trojan-cert/fullchain.cer",
-        "key": "/usr/src/trojan-cert/private.key",
-        "key_password": "",
-        "cipher_tls13":"TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
-	"prefer_server_cipher": true,
-        "alpn": [
-            "http/1.1"
-        ],
-        "reuse_session": true,
-        "session_ticket": false,
-        "session_timeout": 600,
-        "plain_http_response": "",
-        "curves": "",
-        "dhparam": ""
-    },
-    "tcp": {
-        "no_delay": true,
-        "keep_alive": true,
-        "fast_open": false,
-        "fast_open_qlen": 20
-    },
-    "mysql": {
-        "enabled": false,
-        "server_addr": "127.0.0.1",
-        "server_port": 3306,
-        "database": "trojan",
-        "username": "trojan",
-        "password": ""
+      "enabled": false,
+      "key": "",
+      "cert": "",
+      "verify_client": false,
+      "client_cert": []
     }
+  }
 }
 EOF
     
 #增加启动脚本	
-cat > ${systempwd}trojan.service <<-EOF
+cat > ${systempwd}trojan-go.service <<-EOF
 [Unit]  
-Description=trojan
-After=network.target  
+Description=Trojan-Go
+After=network.target nss-lookup.target 
    
-[Service]  
-Type=simple  
-PIDFile=/usr/src/trojan-go/trojan-go.pid
-ExecStart=/usr/src/trojan-go/trojan-go -config "/usr/src/trojan-go/config.json"  
-ExecReload=  
-ExecStop=/usr/src/trojan-go/trojan-go  
-PrivateTmp=true  
-   
+[Service]
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true  
+ExecStart=/usr/src/trojan-go/trojan-go -config "/usr/src/trojan-go/config.json"    
+Restart=on-failure
+RestartSec=10s  
 [Install]  
 WantedBy=multi-user.target
 EOF
 
-	chmod +x ${systempwd}trojan.service
-	systemctl start trojan.service
-	systemctl enable trojan.service
-	green "======================================================================"
-	green "Trojan已安装完成，参数如下:"
-	green "域名:$your_domain"
-	green "端口:443"
-	green "密码:$trojan_passwd"
-	green "链接:trojan://$trojan_passwd@$your_domain:443"
-	green "配置文件路径:/usr/src/trojan-go/config.json，修改后通过systemctl restart trojan使其生效"
-	green "======================================================================"
+		chmod +x ${systempwd}trojan-go.service
+		systemctl start trojan-go.service
+		systemctl enable trojan-go.service
+		green "======================================================================"
+		green "Trojan已安装完成，参数如下:"
+		green "域名:$your_domain"
+		green "端口:443"
+		green "密码:$trojan_passwd"
+		green "链接:trojan://$trojan_passwd@$your_domain:443"
+		green "配置文件路径:/usr/src/trojan-go/config.json，修改后通过systemctl restart trojan-go使其生效"
+		green "======================================================================"
 	else
-        red "==================================="
-	red "https证书没有申请成果，自动安装失败"
-	green "不要担心，你可以手动修复证书申请"
-	green "1. 重启VPS"
-	green "2. 重新执行脚本，使用修复证书功能"
-	red "==================================="
+		red "==================================="
+		red "Ip和域名不一致"
+		green "不要担心，你可以手动修复证书申请"
+		green "1. 重启VPS"
+		green "2. 重新执行脚本，使用修复证书功能"
+		red "==================================="
 	fi
-	
-else
-	red "================================"
-	red "域名解析地址与本VPS IP地址不一致"
-	red "本次安装失败，请确保域名解析正常"
-	red "================================"
-fi
 }
+
 
 function repair_cert(){
 systemctl stop nginx
@@ -322,7 +403,7 @@ if [ $real_addr == $local_addr ] ; then
         --fullchain-file /usr/src/trojan-cert/fullchain.cer
     if test -s /usr/src/trojan-cert/fullchain.cer; then
         green "证书申请成功"
-	systemctl restart trojan
+	systemctl restart trojan-go
 	systemctl start nginx
     else
     	red "申请证书失败"
@@ -334,23 +415,33 @@ else
     red "================================"
 fi	
 }
-
-function remove_trojan(){
+function remove_nginx(){
     red "================================"
-    red "即将卸载trojan"
-    red "同时卸载安装的nginx"
+    red "即将卸载nginx,同时卸载trojan"
     red "================================"
-    systemctl stop trojan
-    systemctl disable trojan
-    rm -f ${systempwd}trojan.service
+    systemctl stop trojan-go
+    systemctl disable trojan-go
+    rm -f ${systempwd}trojan-go.service
     if [ "$release" == "centos" ]; then
         yum remove -y nginx
     else
         apt autoremove -y nginx
-	apt autoremove -y php7.2-*
     fi
     rm -rf /usr/src/trojan*
-    rm -rf /usr/share/nginx/html/*
+    rm -rf /usr/share/nginx
+    rm -rf /etc/nginx
+    green "=============="
+    green "nginx和trojan删除完毕"
+    green "=============="
+}
+function remove_trojan(){
+    red "================================"
+    red "即将卸载trojan"
+    red "================================"
+    systemctl stop trojan-go
+    systemctl disable trojan-go
+    rm -f ${systempwd}trojan-go.service
+    rm -rf /usr/src/trojan*
     green "=============="
     green "trojan删除完毕"
     green "=============="
@@ -359,11 +450,26 @@ function remove_trojan(){
 function bbr_boost_sh(){
     wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
-function install_typecho(){
+function install_PHPAndTypecho(){
     green "=============="
     green "开始安装php相关"
     green "=============="
-    $systemPackage -y install  install php7.2-fpm  php7.2-xml php7.2-xmlrpc php7.2-sqlite3 php7.2-mbstring >/dev/null 2>&1
+    $systemPackage -y install  install php7.2-fpm  php7.2-xml php7.2-xmlrpc php7.2-sqlite3 php7.2-mbstring php-memcached php7.2-curl php7.2-gd >/dev/null 2>&1
+    cat > ${systempwd}php7.2-fpm.service <<-EOF
+[Unit]
+Description=The PHP 7.2 FastCGI Process Manager
+Documentation=man:php-fpm7.2(8)
+After=network.target
+
+[Service] 
+Type=simple
+PIDFile=/run/php/php7.2-fpm.pid
+ExecStart=/usr/sbin/php-fpm7.2  --nodaemonize --fpm-config /etc/php/7.2/fpm/php-fpm.conf
+ExecReload=/bin/kill -USR2 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+EOF
     green "=============="
     green "安装php相关完毕，开始下载typecho"
     green "=============="
@@ -378,6 +484,23 @@ function install_typecho(){
     green "安下载typecho完毕"
     green "=============="
 }
+function remove_PHPAndTypecho(){
+    red "================================"
+    red "即将卸载php和Typecho"
+    red "================================"
+    systemctl stop php7.2-fpm
+    systemctl disable php7.2-fpm
+    rm -f ${systempwd}php7.2-fpm.service
+    if [ "$release" == "centos" ]; then
+        yum remove -y php7.2-*
+    else
+	apt autoremove -y php7.2-*
+    fi
+    rm -rf /usr/share/nginx/html/*
+    green "=============="
+    green "php和Typecho删除完毕"
+    green "=============="
+}
 start_menu(){
     clear
     green " ===================================="
@@ -389,29 +512,52 @@ start_menu(){
     red " *若是第二次使用脚本，请先执行卸载trojan"
     green " ======================================="
     echo
-    green " 1. 安装trojan"
-    red " 2. 卸载trojan"
-    green " 3. 修复证书"
-    green " 4. 安装BBR-PLUS加速4合一脚本"
-    green " 5. 安装Typecho"
+    green " 1. 安装Nginx"
+    red " 2. 卸载Nginx"
+    green " 3. 安装trojan-go"
+    red " 4. 卸载trojan-go"
+    green " 5. 修复证书"
+    green " 6. 安装BBR-PLUS加速4合一脚本"
+    green " 7. 安装PHP和Typecho"
+    green " 8. 卸载PHP和Typecho"
+    green " 9. 一键安装nginx、Trojan-go、PHP、Typecho"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
     case "$num" in
     1)
-    install_trojan
+    install_nginx
     ;;
     2)
-    remove_trojan 
+    remove_nginx 
     ;;
     3)
-    repair_cert 
+    install_trojan
     ;;
     4)
-    bbr_boost_sh 
+    remove_trojan 
     ;;
     5)
-    install_typecho 
+    repair_cert 
+    ;;
+    6)
+    bbr_boost_sh 
+    ;;
+    7)
+    install_PHPAndTypecho 
+    ;;
+    8)
+    remove_PHPAndTypecho
+    ;;
+    9)
+    install_nginx
+    install_trojan
+    install_PHPAndTypecho
+    ;;
+    10)
+    remove_nginx
+    remove_trojan
+    remove_PHPAndTypecho
     ;;
     0)
     exit 1
