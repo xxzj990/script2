@@ -40,7 +40,7 @@ elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
     systempwd="/usr/lib/systemd/system/"
 fi
 
-function install_trojan(){
+function install_nginx(){
 systemctl stop nginx
 $systemPackage -y install net-tools socat
 Port80=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80`
@@ -126,15 +126,11 @@ fi
 $systemPackage -y install  nginx wget unzip zip curl tar >/dev/null 2>&1
 systemctl enable nginx
 systemctl stop nginx
-green "======================="
-blue "请输入绑定到本VPS的域名"
-green "======================="
-read your_domain
 real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
 local_addr=`curl ipv4.icanhazip.com`
 if [ $real_addr == $local_addr ] ; then
 	green "=========================================="
-	green "       域名解析正常，开始安装trojan"
+	green "       域名解析正常，开始配置nginx以及更新证书"
 	green "=========================================="
 	sleep 1s
 cat > /etc/nginx/nginx.conf <<-EOF
@@ -161,28 +157,10 @@ http {
         listen       80;
         server_name  $your_domain;
         root /usr/share/nginx/html;
-        index index.php index.html index.htm;
-	#typecho所需配置
-	if (!-e \$request_filename) {
-	    rewrite ^(.*)\$ /index.php\$1 last;
-	}
-	location ~  .*\.php(\/.*)*\$ {
-	    #支持pathinfo的关键配置
-	    fastcgi_split_path_info ^(.+?\.php)(/.*)\$;
-	    #php-fpm的监听端口
-	    fastcgi_pass unix:/var/run/php/php7.2-fpm.sock; 
-	    fastcgi_index  index.php;
-	    fastcgi_param  SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
-	    include        fastcgi_params;
-	}    
+        index index.php index.html index.htm;    
     }
 }
 EOF
-	#设置伪装站
-	rm -rf /usr/share/nginx/html/*
-	cd /usr/share/nginx/html/
-	wget https://github.com/dzhl/script/raw/master/typecho-1.1-17.10.30-release.zip
-    	unzip typecho-1.1-17.10.30-release.zip
 	systemctl stop nginx
 	sleep 5
 	#申请https证书
@@ -194,11 +172,39 @@ EOF
         --fullchain-file /usr/src/trojan-cert/fullchain.cer
 	if test -s /usr/src/trojan-cert/fullchain.cer; then
 	systemctl start nginx
+        
+	else
+        red "==================================="
+	red "https证书没有申请成果，自动安装失败"
+	green "不要担心，你可以手动修复证书申请"
+	green "1. 重启VPS"
+	green "2. 重新执行脚本，使用修复证书功能"
+	red "==================================="
+	fi
+	
+else
+	red "================================"
+	red "域名解析地址与本VPS IP地址不一致"
+	red "本次安装失败，请确保域名解析正常"
+	red "================================"
+fi
+}
+
+
+function install_trojan(){
+real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
+local_addr=`curl ipv4.icanhazip.com`
+if [ $real_addr == $local_addr ] ; then
+	green "=========================================="
+	green "       域名解析正常，开始安装trojan"
+	green "=========================================="
+	sleep 1s
         cd /usr/src
 	wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
 	latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`
 	wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
 	tar xf trojan-${latest_version}-linux-amd64.tar.xz
+	rm trojan-${latest_version}-linux-amd64.tar.xz
         #设定trojan密码
         green "======================="
         blue "请输入密码"
@@ -206,8 +212,8 @@ EOF
         read trojan_passwd
 	#trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
         #配置trojan
-	rm -rf /usr/src/trojan/server.conf
-	cat > /usr/src/trojan/server.conf <<-EOF
+	rm -rf /usr/src/trojan/config.json
+	cat > /usr/src/trojan/config.json <<-EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
@@ -259,8 +265,8 @@ After=network.target
    
 [Service]  
 Type=simple  
-PIDFile=/usr/src/trojan/trojan/trojan.pid
-ExecStart=/usr/src/trojan/trojan -c "/usr/src/trojan/server.conf"  
+PIDFile=/usr/src/trojan/trojan.pid
+ExecStart=/usr/src/trojan/trojan -c "/usr/src/trojan/config.json"  
 ExecReload=  
 ExecStop=/usr/src/trojan/trojan  
 PrivateTmp=true  
@@ -272,30 +278,24 @@ EOF
 	chmod +x ${systempwd}trojan.service
 	systemctl start trojan.service
 	systemctl enable trojan.service
-	green "======================================================================"
-	green "Trojan已安装完成，参数如下:"
-	green "域名:$your_domain"
-	green "端口:443"
-	green "密码:$trojan_passwd"
-	green "链接:trojan://$trojan_passwd@$your_domain:443"
-	green "配置文件路径:/usr/src/trojan/server.conf，修改后通过systemctl restart trojan使其生效"
-	green "======================================================================"
+		green "======================================================================"
+		green "Trojan已安装完成，参数如下:"
+		green "域名:$your_domain"
+		green "端口:443"
+		green "密码:$trojan_passwd"
+		green "链接:trojan://$trojan_passwd@$your_domain:443"
+		green "配置文件路径:/usr/src/trojan/config.json，修改后通过systemctl restart trojan使其生效"
+		green "======================================================================"
 	else
-        red "==================================="
-	red "https证书没有申请成果，自动安装失败"
-	green "不要担心，你可以手动修复证书申请"
-	green "1. 重启VPS"
-	green "2. 重新执行脚本，使用修复证书功能"
-	red "==================================="
+		red "==================================="
+		red "Ip和域名不一致"
+		green "不要担心，你可以手动修复证书申请"
+		green "1. 重启VPS"
+		green "2. 重新执行脚本，使用修复证书功能"
+		red "==================================="
 	fi
-	
-else
-	red "================================"
-	red "域名解析地址与本VPS IP地址不一致"
-	red "本次安装失败，请确保域名解析正常"
-	red "================================"
-fi
 }
+
 
 function repair_cert(){
 systemctl stop nginx
@@ -321,8 +321,7 @@ if [ $real_addr == $local_addr ] ; then
         --fullchain-file /usr/src/trojan-cert/fullchain.cer
     if test -s /usr/src/trojan-cert/fullchain.cer; then
         green "证书申请成功"
-	green "请将/usr/src/trojan-cert/下的fullchain.cer下载放到客户端trojan-cli文件夹"
-	systemctl restart trojan
+	systemctl restart trojan-go
 	systemctl start nginx
     else
     	red "申请证书失败"
@@ -334,22 +333,31 @@ else
     red "================================"
 fi	
 }
-
-function remove_trojan(){
+function remove_nginx(){
     red "================================"
-    red "即将卸载trojan"
-    red "同时卸载安装的nginx"
+    red "即将卸载nginx,同时卸载trojan"
     red "================================"
-    systemctl stop trojan
-    systemctl disable trojan
-    rm -f ${systempwd}trojan.service
+    rm -f ${systempwd}trojan-go.service
     if [ "$release" == "centos" ]; then
         yum remove -y nginx
     else
         apt autoremove -y nginx
     fi
+    rm -rf /usr/share/nginx
+    rm -rf /etc/nginx
+    green "=============="
+    green "nginx删除完毕"
+    green "=============="
+    remove_trojan()
+}
+function remove_trojan(){
+    red "================================"
+    red "即将卸载trojan"
+    red "================================"
+    systemctl stop trojan
+    systemctl disable trojan
+    rm -f ${systempwd}trojan.service
     rm -rf /usr/src/trojan*
-    rm -rf /usr/share/nginx/html/*
     green "=============="
     green "trojan删除完毕"
     green "=============="
@@ -358,7 +366,126 @@ function remove_trojan(){
 function bbr_boost_sh(){
     wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
+function install_PHPAndTypecho(){
+    green "=============="
+    green "开始安装php相关"
+    green "=============="
+    $systemPackage -y install  install php7.2-fpm  php7.2-xml php7.2-xmlrpc php7.2-sqlite3 php7.2-mbstring php-memcached php7.2-curl php7.2-gd >/dev/null 2>&1
+    cat > /etc/nginx/nginx.conf <<-EOF
+user  root;
+worker_processes  1;
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+events {
+    worker_connections  1024;
+}
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+                      '\$status \$body_bytes_sent "\$http_referer" '
+                      '"\$http_user_agent" "\$http_x_forwarded_for"';
+    access_log  /var/log/nginx/access.log  main;
+    sendfile        on;
+    #tcp_nopush     on;
+    keepalive_timeout  120;
+    client_max_body_size 20m;
+    #gzip  on;
+    server {
+        listen       80;
+        server_name  $your_domain;
+        root /usr/share/nginx/html;
+        index index.php index.html index.htm;
+	#typecho所需配置
+	if (!-e \$request_filename) {
+	    rewrite ^(.*)\$ /index.php\$1 last;
+	}
+	location ~  .*\.php(\/.*)*\$ {
+	    #支持pathinfo的关键配置
+	    fastcgi_split_path_info ^(.+?\.php)(/.*)\$;
+	    #php-fpm的监听端口
+	    fastcgi_pass unix:/var/run/php/php7.2-fpm.sock; 
+	    fastcgi_index  index.php;
+	    fastcgi_param  SCRIPT_FILENAME  \$document_root\$fastcgi_script_name;
+	    include        fastcgi_params;
+	}    
+    }
+}
+EOF
+cat > ${systempwd}php7.2-fpm.service <<-EOF
+[Unit]
+Description=The PHP 7.2 FastCGI Process Manager
+Documentation=man:php-fpm7.2(8)
+After=network.target
 
+[Service] 
+Type=simple
+PIDFile=/run/php/php7.2-fpm.pid
+ExecStart=/usr/sbin/php-fpm7.2  --nodaemonize --fpm-config /etc/php/7.2/fpm/php-fpm.conf
+ExecReload=/bin/kill -USR2 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    green "=============="
+    green "安装php相关完毕，开始下载typecho"
+    green "=============="
+    systemctl start php7.2-fpm.service
+    systemctl enable php7.2-fpm.service
+    #设置伪装站
+    rm -rf /usr/share/nginx/html/*
+    cd /usr/share/nginx/html/
+    wget https://github.com/dzhl/script/raw/master/typecho-1.1-17.10.30-release.zip
+    unzip typecho-1.1-17.10.30-release.zip
+    green "=============="
+    green "安下载typecho完毕"
+    green "=============="
+}
+function remove_PHPAndTypecho(){
+    red "================================"
+    red "即将卸载php和Typecho"
+    red "================================"
+    systemctl stop php7.2-fpm
+    systemctl disable php7.2-fpm
+    rm -f ${systempwd}php7.2-fpm.service
+    if [ "$release" == "centos" ]; then
+        yum remove -y php7.2-*
+    else
+	apt autoremove -y php7.2-*
+    fi
+cat > /etc/nginx/nginx.conf <<-EOF
+user  root;
+worker_processes  1;
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+events {
+    worker_connections  1024;
+}
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+                      '\$status \$body_bytes_sent "\$http_referer" '
+                      '"\$http_user_agent" "\$http_x_forwarded_for"';
+    access_log  /var/log/nginx/access.log  main;
+    sendfile        on;
+    #tcp_nopush     on;
+    keepalive_timeout  120;
+    client_max_body_size 20m;
+    #gzip  on;
+    server {
+        listen       80;
+        server_name  $your_domain;
+        root /usr/share/nginx/html;
+        index index.php index.html index.htm;    
+    }
+}
+EOF
+    rm -rf /usr/share/nginx/html/*
+    green "=============="
+    green "php和Typecho删除完毕"
+    green "=============="
+}
 start_menu(){
     clear
     green " ===================================="
@@ -370,25 +497,52 @@ start_menu(){
     red " *若是第二次使用脚本，请先执行卸载trojan"
     green " ======================================="
     echo
-    green " 1. 安装trojan"
-    red " 2. 卸载trojan"
-    green " 3. 修复证书"
-    green " 4. 安装BBR-PLUS加速4合一脚本"
+    green " 1. 安装Nginx"
+    red " 2. 卸载Nginx"
+    green " 3. 安装trojan-go"
+    red " 4. 卸载trojan-go"
+    green " 5. 修复证书"
+    green " 6. 安装BBR-PLUS加速4合一脚本"
+    green " 7. 安装PHP和Typecho"
+    green " 8. 卸载PHP和Typecho"
+    green " 9. 一键安装nginx、Trojan-go、PHP、Typecho"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
     case "$num" in
     1)
-    install_trojan
+    install_nginx
     ;;
     2)
-    remove_trojan 
+    remove_nginx 
     ;;
     3)
-    repair_cert 
+    install_trojan
     ;;
     4)
+    remove_trojan 
+    ;;
+    5)
+    repair_cert 
+    ;;
+    6)
     bbr_boost_sh 
+    ;;
+    7)
+    install_PHPAndTypecho 
+    ;;
+    8)
+    remove_PHPAndTypecho
+    ;;
+    9)
+    install_nginx
+    install_trojan
+    install_PHPAndTypecho
+    ;;
+    10)
+    remove_nginx
+    remove_trojan
+    remove_PHPAndTypecho
     ;;
     0)
     exit 1
@@ -401,5 +555,9 @@ start_menu(){
     ;;
     esac
 }
-
+green "======================="
+blue "请输入绑定到本VPS的域名"
+green "======================="
+read your_domain
 start_menu
+
