@@ -618,9 +618,9 @@ start_menu(){
     ;;
     esac
 }
-
-start_menu
 green "======================="
 blue "请输入绑定到本VPS的域名"
 green "======================="
 read your_domain
+start_menu
+
