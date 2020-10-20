@@ -191,7 +191,7 @@ fi
 }
 
 
-function install_trojan(){
+function install_trojan_go(){
 real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
 local_addr=`curl ipv4.icanhazip.com`
 if [ $real_addr == $local_addr ] ; then
@@ -200,16 +200,26 @@ if [ $real_addr == $local_addr ] ; then
 	green "=========================================="
 	sleep 1s
         cd /usr/src
-	green "======================="
-        blue "打开https://github.com/p4gefau1t/trojan-go/releases，最新版本号，输入版本号，不需要输入v"
-        green "======================="
-        read latest_version
-	#wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
-	#latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`
-	wget https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-amd64.zip
-	#tar xf trojan-${latest_version}-linux-amd64.tar.xz
-	unzip trojan-go-linux-amd64.zip -d trojan-go
-	rm trojan-go-linux-amd64.zip
+	if [ $1 == 1 ] ; then
+		green "======================="
+		blue "打开https://github.com/p4gefau1t/trojan-go/releases，最新版本号，输入版本号，不需要输入v"
+		green "======================="
+		read latest_version
+		#wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
+		#latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`
+		wget https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-amd64.zip
+		#tar xf trojan-${latest_version}-linux-amd64.tar.xz
+		unzip trojan-go-linux-amd64.zip -d trojan
+		mv ./trojan-go ./trojan
+		rm trojan-go-linux-amd64.zip
+	else
+		wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
+		latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-linux-amd64.tar.xz
+		wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
+		tar xf trojan-1.16.0-linux-amd64.tar.xz
+		rm trojan-${latest_version}-linux-amd64.tar.xz
+	fi
+	
         #设定trojan密码
         green "======================="
         blue "请输入密码"
@@ -217,8 +227,8 @@ if [ $real_addr == $local_addr ] ; then
         read trojan_passwd
 	#trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
         #配置trojan
-	rm -rf /usr/src/trojan-go/config.json
-	cat > /usr/src/trojan-go/config.json <<-EOF
+	rm -rf /usr/src/trojan/config.json
+	cat > /usr/src/trojan/config.json <<-EOF
 {
   "run_type": "server",
   "local_addr": "0.0.0.0",
@@ -267,8 +277,8 @@ if [ $real_addr == $local_addr ] ; then
     "block": [],
     "default_policy": "proxy",
     "domain_strategy": "as_is",
-    "geoip": "/usr/src/trojan-go/geoip.dat",
-    "geosite": "/usr/src/trojan-go/geosite.dat"
+    "geoip": "/usr/src/trojan/geoip.dat",
+    "geosite": "/usr/src/trojan/geosite.dat"
   },
   "websocket": {
     "enabled": false,
@@ -320,32 +330,32 @@ if [ $real_addr == $local_addr ] ; then
 EOF
     
 #增加启动脚本	
-cat > ${systempwd}trojan-go.service <<-EOF
+cat > ${systempwd}trojan.service <<-EOF
 [Unit]  
-Description=Trojan-Go
+Description=trojan
 After=network.target nss-lookup.target 
    
 [Service]
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true  
-ExecStart=/usr/src/trojan-go/trojan-go -config "/usr/src/trojan-go/config.json"    
+ExecStart=/usr/src/trojan/trojan --config "/usr/src/trojan/config.json"    
 Restart=on-failure
 RestartSec=10s  
 [Install]  
 WantedBy=multi-user.target
 EOF
 
-		chmod +x ${systempwd}trojan-go.service
-		systemctl start trojan-go.service
-		systemctl enable trojan-go.service
+		chmod +x ${systempwd}trojan.service
+		systemctl start trojan.service
+		systemctl enable trojan.service
 		green "======================================================================"
 		green "Trojan已安装完成，参数如下:"
 		green "域名:$your_domain"
 		green "端口:443"
 		green "密码:$trojan_passwd"
 		green "链接:trojan://$trojan_passwd@$your_domain:443"
-		green "配置文件路径:/usr/src/trojan-go/config.json，修改后通过systemctl restart trojan-go使其生效"
+		green "配置文件路径:/usr/src/trojan/config.json，修改后通过systemctl restart trojan使其生效"
 		green "======================================================================"
 	else
 		red "==================================="
@@ -382,7 +392,7 @@ if [ $real_addr == $local_addr ] ; then
         --fullchain-file /usr/src/trojan-cert/fullchain.cer
     if test -s /usr/src/trojan-cert/fullchain.cer; then
         green "证书申请成功"
-	systemctl restart trojan-go
+	systemctl restart trojan
 	systemctl start nginx
     else
     	red "申请证书失败"
@@ -398,7 +408,7 @@ function remove_nginx(){
     red "================================"
     red "即将卸载nginx,同时卸载trojan"
     red "================================"
-    rm -f ${systempwd}trojan-go.service
+    rm -f ${systempwd}trojan.service
     if [ "$release" == "centos" ]; then
         yum remove -y nginx
     else
@@ -413,14 +423,14 @@ function remove_nginx(){
 }
 function remove_trojan(){
     red "================================"
-    red "即将卸载trojan"
+    red "即将卸载trojan或者trojan-go"
     red "================================"
-    systemctl stop trojan-go
-    systemctl disable trojan-go
-    rm -f ${systempwd}trojan-go.service
+    systemctl stop trojan
+    systemctl disable trojan
+    rm -f ${systempwd}trojan.service
     rm -rf /usr/src/trojan*
     green "=============="
-    green "trojan删除完毕"
+    green "trojan或者trojan-go删除完毕"
     green "=============="
 }
 
@@ -561,12 +571,15 @@ start_menu(){
     green " 1. 安装Nginx"
     red " 2. 卸载Nginx"
     green " 3. 安装trojan-go"
-    red " 4. 卸载trojan-go"
-    green " 5. 修复证书"
-    green " 6. 安装BBR-PLUS加速4合一脚本"
-    green " 7. 安装PHP和Typecho"
-    green " 8. 卸载PHP和Typecho"
-    green " 9. 一键安装nginx、Trojan-go、PHP、Typecho"
+    red " 4. 安装trojan"
+    green " 5. 卸载trojan"
+    red " 6. 修复证书"
+    green " 7. 安装BBR-PLUS加速4合一脚本"
+    red " 8. 安装PHP和Typecho"
+    green " 9. 卸载PHP和Typecho"
+    red " 10. 一键安装nginx、Trojan-go、PHP、Typecho"
+    green " 11. 一键安装nginx、Trojan、PHP、Typecho"
+    red " 12. 一键卸载nginx、Trojan或者Trojan-go、PHP、Typecho"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -578,31 +591,38 @@ start_menu(){
     remove_nginx 
     ;;
     3)
-    install_trojan
+    install_trojan_go 1
     ;;
     4)
-    remove_trojan 
+    install_trojan 2
     ;;
     5)
-    repair_cert 
+    remove_trojan
     ;;
     6)
-    bbr_boost_sh 
+    repair_cert 
     ;;
     7)
-    install_PHPAndTypecho 
+    bbr_boost_sh 
     ;;
     8)
-    remove_PHPAndTypecho
+    install_PHPAndTypecho 
     ;;
     9)
-    install_nginx
-    install_trojan
-    install_PHPAndTypecho
+    remove_PHPAndTypecho
     ;;
     10)
+    install_nginx
+    install_trojan_go 1
+    install_PHPAndTypecho
+    ;;
+    11)
+    install_nginx
+    install_trojan 2
+    install_PHPAndTypecho
+    ;;
+    12)
     remove_nginx
-    remove_trojan
     remove_PHPAndTypecho
     ;;
     0)
