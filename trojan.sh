@@ -837,7 +837,6 @@ start_menu(){
         exit 1
         ;;
     *)
-    clear
     red "请输入正确数字"
     sleep 1s
     ;;
