@@ -503,7 +503,7 @@ function remove_trojan(){
 }
 
 function bbr_boost_sh(){
-    wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
+    wget -N --no-check-certificate  "https://github.000060000.xyz/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
 function install_PHPAndTypecho(){
     systemctl stop nginx
