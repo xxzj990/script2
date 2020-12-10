@@ -146,7 +146,7 @@ worker_connections  1024;
 stream {
     # 这里就是 SNI 识别，将域名映射成一个配置名
     map \$ssl_preread_server_name \$backend_name {
-        $your_domain trojan
+        $your_domain trojan;
         www.mb3admin.com web;
         # 域名都不匹配情况下的默认值
         default web;
@@ -669,7 +669,7 @@ worker_connections  1024;
 stream {
     # 这里就是 SNI 识别，将域名映射成一个配置名
     map \$ssl_preread_server_name \$backend_name {
-        $your_domain trojan
+        $your_domain trojan;
         www.mb3admin.com web;
         # 域名都不匹配情况下的默认值
         default web;
