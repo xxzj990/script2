@@ -640,6 +640,9 @@ EOF
      cd /usr/share/nginx/html/
      wget https://github.com/dzhl/script/raw/master/typecho-1.1-17.10.30-release.zip
      unzip typecho-1.1-17.10.30-release.zip > /dev/null 2>&1
+     wget https://github.com/BadApple9/speedtest-x/archive/master.zip
+     unzip master.zip > /dev/null 2>&1
+     mv speedtest-x speedtest
      green "=============="
      green "安下载typecho完毕"
      green "=============="
@@ -759,6 +762,9 @@ EOF
 function testSpeed() {
     wget vpstest.cn/it && bash it
 }
+function pagetestSpeed() {
+    wget -N --no-check-certificate "https://raw.githubusercontent.com/dzhl/script/master/speedtest" && chmod +x speedtest && ./speedtest
+}
 start_menu(){
     green " ===================================="
     green " Trojan 一键安装自动脚本 2020-2-27 更新      "
@@ -776,12 +782,13 @@ start_menu(){
     green " 5. 卸载trojan"
     red " 6. 修复证书"
     green " 7. 安装BBR-PLUS加速4合一脚本"
-    red " 8. 安装PHP和Typecho"
+    red " 8. 安装PHP和Typecho和网页版speedtest"
     green " 9. 卸载PHP和Typecho"
     red " 10. 一键安装nginx、Trojan-go、PHP、Typecho"
     green " 11. 一键安装nginx、Trojan、PHP、Typecho"
     red " 12. 一键卸载nginx、Trojan或者Trojan-go、PHP、Typecho"
-    red " 13. 测速"
+    green " 13. 测速"
+    red " 14. 单文件版测速"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -832,6 +839,9 @@ start_menu(){
         ;;
     13)
         testSpeed
+        ;;
+    14)
+        pagetestSpeed
         ;;
     0)
         exit 1
