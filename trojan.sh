@@ -642,7 +642,7 @@ EOF
      unzip typecho-1.1-17.10.30-release.zip > /dev/null 2>&1
      wget https://github.com/BadApple9/speedtest-x/archive/master.zip
      unzip master.zip > /dev/null 2>&1
-     mv speedtest-x speedtest
+     mv speedtest-x-master speedtest
      green "=============="
      green "安下载typecho完毕"
      green "=============="
