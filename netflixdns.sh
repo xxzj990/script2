@@ -38,7 +38,7 @@ if [ $? -eq 0 ]; then
     echo "server=/netflixdnstest6.com/$1" >> /etc/dnsmasq.d/unlock.conf
     echo "server=/netflixdnstest7.com/$1" >> /etc/dnsmasq.d/unlock.conf
     echo "server=/netflixdnstest8.com/$1" >> /etc/dnsmasq.d/unlock.conf
-    echo "server=/netflixdnstest0.com/$1" >> /etc/dnsmasq.d/unlock.conf
+    echo "server=/netflixdnstest9.com/$1" >> /etc/dnsmasq.d/unlock.conf
     systemctl restart dnsmasq
     echo "dnsmasq启动成功"
 else
