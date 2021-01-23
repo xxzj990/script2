@@ -134,7 +134,8 @@ systemctl eneable nginx
     cd /etc/nginx
      wget https://github.com/dzhl/script/raw/master/nginxconf.zip
      unzip nginxconf.zip > /dev/null 2>&1
-    cd  /root	
+     rm nginxconf.zip
+     cd  /root	
 	cat > /etc/nginx/nginx.conf <<-EOF
 load_module /usr/lib/nginx/modules/ngx_stream_module.so;
 user  root;
@@ -543,13 +544,12 @@ function remove_trojan(){
 }
 function remove_allsitesfiles(){
     rm -rf /home/wwwroots
-   rm -rf /home/wwwlogs
+    rm -rf /home/wwwlogs
 }
 function bbr_boost_sh(){
     wget -N --no-check-certificate  "https://github.000060000.xyz/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
 function install_typecho(){
-     removeSite
      addSite
      cd /home/wwwroot/$your_domain
      wget https://github.com/dzhl/script/raw/master/typecho-1.1-17.10.30-release.zip
@@ -562,6 +562,7 @@ function install_typecho(){
      green "=============="
      green "安下载typecho完毕"
      green "=============="
+     cd /root
 }
 function install_php(){
 	systemctl stop nginx
@@ -943,21 +944,22 @@ start_menu(){
     red " 2. 卸载Nginx"
     green " 3. 安装trojan-go"
     red " 4. 安装trojan"
-    green " 5. 卸载trojan"
-    red " 6. 修复证书"
-    green " 7. 安装BBR-PLUS加速4合一脚本"
-    red " 8. 安装PHP和Typecho和网页版speedtest"
-    green " 9. 卸载PHP"
-    red " 10. 一键安装nginx、Trojan-go、PHP、Typecho"
-    green " 11. 一键安装nginx、Trojan、PHP、Typecho"
-    red " 12. 一键卸载nginx、Trojan或者Trojan-go、PHP、Typecho"
-    green " 13. 测速"
-    red " 14. 单文件版测速"
-    green " 15. 添加站点"
-    red " 16. 删除站点"
-    green " 17. 添加Typecho"
-    red " 18. 清除所有站点"
-    green " 19. 安装php"
+    green " 5. 卸载trojan/trojan-go"
+    red " 6. 创建证书"
+    green " 7. 安装php"
+    red " 8. 卸载PHP"
+    green " 9. 添加Typecho"
+    red " 10. 添加站点"
+    green " 11. 删除站点"
+    red " 12. 清除所有站点文件"
+    green " 13. 一键安装PHP、Typecho、speedtest"
+    red " 14. 一键卸载PHP、Typecho、speedtest"
+    green " 15. 一键安装nginx、Trojan-go、PHP、Typecho、speedtest"
+    red " 16. 一键安装nginx、Trojan、PHP、Typecho、speedtest"
+    green " 17. 一键卸载nginx、Trojan或者Trojan-go、PHP、Typecho"
+    red " 18. 测速"
+    green " 19. 单文件版测速"
+    red " 20. 安装BBR-PLUS加速4合一脚本"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -982,55 +984,59 @@ start_menu(){
         create_cert 
         ;;
     7)
-        bbr_boost_sh 
+        install_php
         ;;
     8)
-        install_php 
-        install_typecho
-        ;;
-    9)
         remove_php
         red "需要重启才能重新安装PHP,请手工重启"
         ;;
+    9)
+        install_typecho
+        ;;
     10)
+        addSite
+        ;;
+    11)
+        removeSite
+        ;;
+    12)
+        remove_allsitesfiles
+        ;;
+    13)
+        install_php 
+        install_typecho
+        ;;
+    14)
+        removeSite 
+        remove_php
+        ;;
+    15)
         install_nginx
         install_trojan 1
         install_php
         install_typecho
         ;;
-    11)
+    16)
         install_nginx
         install_trojan 2
         install_php
         install_typecho
         ;;
-    12)
+    17)
         remove_trojan
         removeSite
         remove_php
         remove_nginx
         red "需要重启才能重新安装,请手工重启"
         ;;
-    13)
-        testSpeed
-        ;;
-    14)
+    18)
         pagetestSpeed
         ;;
-    15)
-        addSite
-        ;;
-    16)
-        removeSite
-        ;;
-    17)
-        install_typecho
-        ;;	
-    18)
-        remove_allsitesfiles
-        ;;
     19)
-        install_php
+        testSpeed
+        ;;
+    20)
+        bbr_boost_sh 
         ;;
     0)
         exit 1
