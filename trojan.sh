@@ -945,21 +945,23 @@ start_menu(){
     green " 3. 安装trojan-go"
     red " 4. 安装trojan"
     green " 5. 卸载trojan/trojan-go"
-    red " 6. 创建证书"
-    green " 7. 安装php"
-    red " 8. 卸载PHP"
-    green " 9. 添加Typecho"
-    red " 10. 添加站点"
-    green " 11. 删除站点"
-    red " 12. 清除所有站点文件"
-    green " 13. 一键安装PHP、Typecho、speedtest"
-    red " 14. 一键卸载PHP、Typecho、speedtest"
-    green " 15. 一键安装nginx、Trojan-go、PHP、Typecho、speedtest"
-    red " 16. 一键安装nginx、Trojan、PHP、Typecho、speedtest"
-    green " 17. 一键卸载nginx、Trojan或者Trojan-go、PHP、Typecho"
-    red " 18. 测速"
-    green " 19. 单文件版测速"
-    red " 20. 安装BBR-PLUS加速4合一脚本"
+    red " 6. 一键安装Nginx、trojan-go"
+    green " 7. 一键安装Nginx、trojan"
+    red " 8. 修复证书"
+    green " 9. 安装php"
+    red " 10. 卸载PHP"
+    green " 11. 添加Typecho"
+    red " 12. 添加站点"
+    green " 13. 删除站点"
+    red " 14. 清除所有站点文件"
+    green " 15. 一键安装PHP、Typecho、speedtest"
+    red " 16. 一键卸载PHP、Typecho、speedtest"
+    green " 17. 一键安装nginx、Trojan-go、PHP、Typecho、speedtest"
+    red " 18. 一键安装nginx、Trojan、PHP、Typecho、speedtest"
+    green " 19. 一键卸载nginx、Trojan或者Trojan-go、PHP、Typecho"
+    red " 20. 测速"
+    green " 21. 单文件版测速"
+    red " 22. 安装BBR-PLUS加速4合一脚本"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -981,61 +983,69 @@ start_menu(){
         remove_trojan
         ;;
     6)
-        create_cert 
+        install_nginx
+	install_trojan 1
         ;;
     7)
-        install_php
+        install_nginx
+	install_trojan 2
         ;;
     8)
+        create_cert 
+        ;;
+    9)
+        install_php
+        ;;
+    10)
         remove_php
         red "需要重启才能重新安装PHP,请手工重启"
         ;;
-    9)
+    11)
         install_typecho
         ;;
-    10)
+    12)
         addSite
         ;;
-    11)
+    13)
         removeSite
         ;;
-    12)
+    14)
         remove_allsitesfiles
         ;;
-    13)
+    15)
         install_php 
         install_typecho
         ;;
-    14)
+    16)
         removeSite 
         remove_php
         ;;
-    15)
+    17)
         install_nginx
         install_trojan 1
         install_php
         install_typecho
         ;;
-    16)
+    18)
         install_nginx
         install_trojan 2
         install_php
         install_typecho
         ;;
-    17)
+    19)
         remove_trojan
         removeSite
         remove_php
         remove_nginx
         red "需要重启才能重新安装,请手工重启"
         ;;
-    18)
+    20)
         pagetestSpeed
         ;;
-    19)
+    21)
         testSpeed
         ;;
-    20)
+    22)
         bbr_boost_sh 
         ;;
     0)
