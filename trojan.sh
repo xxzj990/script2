@@ -65,13 +65,13 @@ function install_nginx(){
         red "检测到SELinux为开启状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
         red "======================================================================="
         read -p "是否现在重启 ?请输入 [Y/n] :" yn
-    	[ -z "${yn}" ] && yn="y"
-    	if [[ $yn == [Yy] ]]; then
-    	    sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+        [ -z "${yn}" ] && yn="y"
+        if [[ $yn == [Yy] ]]; then
+            sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
                 setenforce 0
-    	    echo -e "VPS 重启中..."
-    	    reboot
-    	fi
+            echo -e "VPS 重启中..."
+            reboot
+        fi
         exit
     fi
     if [ "$CHECK" == "SELINUX=permissive" ]; then
@@ -79,13 +79,13 @@ function install_nginx(){
         red "检测到SELinux为宽容状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
         red "======================================================================="
         read -p "是否现在重启 ?请输入 [Y/n] :" yn
-    	[ -z "${yn}" ] && yn="y"
-    	if [[ $yn == [Yy] ]]; then
-    	    sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
+        [ -z "${yn}" ] && yn="y"
+        if [[ $yn == [Yy] ]]; then
+            sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
                 setenforce 0
-    	    echo -e "VPS 重启中..."
-    	    reboot
-    	fi
+            echo -e "VPS 重启中..."
+            reboot
+        fi
         exit
     fi
     if [ "$release" == "centos" ]; then
@@ -127,16 +127,16 @@ function install_nginx(){
 systemctl eneable nginx
     systemctl stop nginx
     mkdir /etc/nginx/vhost
-	mkdir /etc/nginx/ssl
-	mkdir /home/wwwroot
-	mkdir /home/wwwlogs
-	mkdir /home/wwwroot/default
+    mkdir /etc/nginx/ssl
+    mkdir /home/wwwroot
+    mkdir /home/wwwlogs
+    mkdir /home/wwwroot/default
     cd /etc/nginx
-     wget https://github.com/dzhl/script/raw/master/nginxconf.zip
-     unzip nginxconf.zip > /dev/null 2>&1
-     rm nginxconf.zip
-     cd  /root	
-	cat > /etc/nginx/nginx.conf <<-EOF
+    wget https://github.com/dzhl/script/raw/master/nginxconf.zip
+    unzip nginxconf.zip > /dev/null 2>&1
+    rm nginxconf.zip
+    cd  /root
+    cat > /etc/nginx/nginx.conf <<-EOF
 load_module /usr/lib/nginx/modules/ngx_stream_module.so;
 user  root;
 worker_processes auto;
@@ -182,20 +182,15 @@ http
     {
         include       mime.types;
         default_type  application/octet-stream;
-
         server_names_hash_bucket_size 128;
         client_header_buffer_size 32k;
         large_client_header_buffers 4 32k;
         client_max_body_size 50m;
-
         sendfile on;
         sendfile_max_chunk 512k;
         tcp_nopush on;
-
         keepalive_timeout 60;
-
         tcp_nodelay on;
-
         gzip on;
         gzip_min_length  1k;
         gzip_buffers     4 16k;
@@ -205,13 +200,10 @@ http
         gzip_vary on;
         gzip_proxied   expired no-cache no-store private auth;
         gzip_disable   "MSIE [1-6]\.";
-
         #limit_conn_zone $binary_remote_addr zone=perip:10m;
         ##If enable limit_conn_zone,add "limit_conn perip 10;" to server section.
-
         server_tokens off;
         access_log off;
-
 server
     {
         listen 80 default_server reuseport;
@@ -219,53 +211,44 @@ server
         server_name _;
         index index.html index.htm index.php;
         root  /home/wwwroot/default;
-
         #error_page   404   /404.html;
-
         # Deny access to PHP files in specific directory
         #location ~ /(wp-content|uploads|wp-includes|images)/.*\.php\$ { deny all; }
-
         #include enable-php.conf;
-
         location /nginx_status
         {
             stub_status on;
             access_log   off;
         }
-
         location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
         {
             expires      30d;
         }
-
         location ~ .*\.(js|css)?$
         {
             expires      12h;
         }
-
         location ~ /.well-known {
             allow all;
         }
-
         location ~ /\.
         {
             deny all;
         }
-
         access_log  /home/wwwlogs/access.log;
     }
 include vhost/*.conf;
 }
 EOF
-	systemctl start nginx
+    systemctl start nginx
 }
 function create_embyserver(){
-	delete_embyserver
-	mkdir /home/wwwroot/www.mb3admin.com
-	cd /home/wwwroot/www.mb3admin.com
-	wget https://github.com/dzhl/script/raw/master/fullchain.cer
-	wget https://github.com/dzhl/script/raw/master/privkey.key
-	cat > /etc/nginx/vhost/www.mb3admin.com.conf <<-EOF
+    delete_embyserver
+    mkdir /home/wwwroot/www.mb3admin.com
+    cd /home/wwwroot/www.mb3admin.com
+    wget https://github.com/dzhl/script/raw/master/fullchain.cer
+    wget https://github.com/dzhl/script/raw/master/private.key
+    cat > /etc/nginx/vhost/www.mb3admin.com.conf <<-EOF
 server {
         #listen 80 default_server;
         listen 10240 ssl http2 default_server;
@@ -274,7 +257,7 @@ server {
         root /usr/share/nginx/www.mb3admin.com;
         #SSL-START SSL相关配置，请勿删除或修改下一行带注释的404规则
         ssl_certificate    /usr/share/nginx/www.mb3admin.com/fullchain.cer
-        ssl_certificate_key    /usr/share/nginx/www.mb3admin.com/privkey.key;
+        ssl_certificate_key    /usr/share/nginx/www.mb3admin.com/private.key;
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
         ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
         ssl_prefer_server_ciphers on;
@@ -283,7 +266,7 @@ server {
         error_page 497  https://\$host\$request_uri;
         #SSL-END
         #禁止访问的文件或目录
-        location ~ ^/(\.user.ini|\.htaccess|\.git|\.svn|\.project|LICENSE|README.md|fullchain.cer|privkey.key) {
+        location ~ ^/(\.user.ini|\.htaccess|\.git|\.svn|\.project|LICENSE|README.md|fullchain.cer|private.key) {
             return 404;
         }
         
@@ -304,46 +287,46 @@ server {
         add_header Access-Control-Allow-Credentials true;
     }
 EOF
-	systemctl restart nginx
+    systemctl restart nginx
 }
 function delete_embyserver(){
-	rm -rf /home/wwwroot/www.mb3admin.com
-	systemctl stop nginx
-	rm -rf /etc/nginx/ssl/www.mb3admin.com
-	rm -rf /etc/nginx/vhost/www.mb3admin.com.conf
-	systemctl start nginx
+    rm -rf /home/wwwroot/www.mb3admin.com
+    systemctl stop nginx
+    rm -rf /etc/nginx/ssl/www.mb3admin.com
+    rm -rf /etc/nginx/vhost/www.mb3admin.com.conf
+    systemctl start nginx
 }
 function install_trojan(){
-	create_cert
-	sleep 1s
-	rm -rf /etc/trojan
+    create_cert
+    sleep 1s
+    rm -rf /etc/trojan
              cd  /etc
-	if [ $1 == 1 ] ; then
-		green "======================="
-		blue "打开https://github.com/p4gefau1t/trojan-go/releases，最新版本号，输入版本号，不需要输入v"
-		green "======================="
-		read latest_version
-		wget https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-amd64.zip
-		unzip trojan-go-linux-amd64.zip -d trojan
-		rm trojan-go-linux-amd64.zip
-		mv ./trojan/trojan-go ./trojan/trojan
-	else
-		wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
-		latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-linux-amd64.tar.xz
-		wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
-		tar xf trojan-1.16.0-linux-amd64.tar.xz
-		rm trojan-${latest_version}-linux-amd64.tar.xz
-	fi
+    if [ $1 == 1 ] ; then
+        green "======================="
+        blue "打开https://github.com/p4gefau1t/trojan-go/releases，最新版本号，输入版本号，不需要输入v"
+        green "======================="
+        read latest_version
+        wget https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-amd64.zip
+        unzip trojan-go-linux-amd64.zip -d trojan
+        rm trojan-go-linux-amd64.zip
+        mv ./trojan/trojan-go ./trojan/trojan
+    else
+        wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
+        latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-linux-amd64.tar.xz
+        wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
+        tar xf trojan-1.16.0-linux-amd64.tar.xz
+        rm trojan-${latest_version}-linux-amd64.tar.xz
+    fi
 
-	#设定trojan密码
-	green "======================="
-	blue "请输入密码"
-	green "======================="
-	read trojan_passwd
-	#trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
-	#配置trojan
-	rm -rf /etc/trojan/config.json
-	cat > /etc/trojan/config.json <<-EOF
+    #设定trojan密码
+    green "======================="
+    blue "请输入密码"
+    green "======================="
+    read trojan_passwd
+    #trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
+    #配置trojan
+    rm -rf /etc/trojan/config.json
+    cat > /etc/trojan/config.json <<-EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
@@ -359,7 +342,7 @@ function install_trojan(){
         "verify": true,
         "verify_hostname": true,
         "cert": "/etc/nginx/ssl/$your_domain/fullchain.cer",
-        "key": "/etc/nginx/ssl/$your_domain/privkey.key",
+        "key": "/etc/nginx/ssl/$your_domain/private.key",
         "key_password": "",
         "cipher": "",
         "curves": "",
@@ -458,17 +441,17 @@ RestartSec=10s
 [Install]  
 WantedBy=multi-user.target
 EOF
-	chmod +x ${systempwd}trojan.service
-	systemctl start trojan.service
-	systemctl enable trojan.service
-	green "======================================================================"
-	green "Trojan已安装完成，参数如下:"
-	green "域名:$your_domain"
-	green "端口:443"
-	green "密码:$trojan_passwd"
-	green "链接:trojan://$trojan_passwd@$your_domain:443"
-	green "配置文件路径:/etc/trojan/config.json，修改后通过systemctl restart trojan使其生效"
-	green "======================================================================"
+    chmod +x ${systempwd}trojan.service
+    systemctl start trojan.service
+    systemctl enable trojan.service
+    green "======================================================================"
+    green "Trojan已安装完成，参数如下:"
+    green "域名:$your_domain"
+    green "端口:443"
+    green "密码:$trojan_passwd"
+    green "链接:trojan://$trojan_passwd@$your_domain:443"
+    green "配置文件路径:/etc/trojan/config.json，修改后通过systemctl restart trojan使其生效"
+    green "======================================================================"
 
 }
 function create_cert(){
@@ -489,26 +472,26 @@ function create_cert(){
     local_addr=`curl ipv4.icanhazip.com`
     if [ $real_addr == $local_addr ] ; then
         mkdir /etc/nginx/ssl/$your_domain
-		~/.acme.sh/acme.sh  --issue  -d $your_domain  --standalone
+        ~/.acme.sh/acme.sh  --issue  -d $your_domain  --standalone
         ~/.acme.sh/acme.sh  --installcert  -d  $your_domain   \
-            --key-file   /etc/nginx/ssl/$your_domain/privkey.key \
+            --key-file   /etc/nginx/ssl/$your_domain/private.key \
             --fullchain-file /etc/nginx/ssl/$your_domain/fullchain.cer
         if test -s /etc/nginx/ssl/$your_domain/fullchain.cer; then
             green "证书申请成功"
-    	systemctl start nginx
+        systemctl start nginx
         else
-        	red "申请证书失败"
-			systemctl start nginx
-			exit
+            red "申请证书失败"
+            systemctl start nginx
+            exit
         fi
     else
         red "================================"
         red "域名解析地址与本VPS IP地址不一致"
         red "本次安装失败，请确保域名解析正常"
         red "================================"
-		systemctl start nginx
-		exit
-    fi	
+        systemctl start nginx
+        exit
+    fi    
 }
 function remove_nginx(){
     red "================================"
@@ -516,7 +499,7 @@ function remove_nginx(){
     red "================================"
     rm -f ${systempwd}trojan.service
     systemctl stop nginx
-	systemctl stop trojan
+    systemctl stop trojan
     if [ "$release" == "centos" ]; then
         yum remove -y nginx
     else
@@ -565,12 +548,12 @@ function install_typecho(){
      cd /root
 }
 function install_php(){
-	systemctl stop nginx
-	green "=============="
-	green "开始安装php相关"
-	green "=============="
-	$systemPackage -y install php7.2-fpm  php7.2-xml php7.2-xmlrpc php7.2-sqlite3 php7.2-mbstring php-memcached php7.2-curl php7.2-gd
-	cat > /etc/nginx/nginx.conf <<-EOF
+    systemctl stop nginx
+    green "=============="
+    green "开始安装php相关"
+    green "=============="
+    $systemPackage -y install php7.2-fpm  php7.2-xml php7.2-xmlrpc php7.2-sqlite3 php7.2-mbstring php-memcached php7.2-curl php7.2-gd
+    cat > /etc/nginx/nginx.conf <<-EOF
 load_module /usr/lib/nginx/modules/ngx_stream_module.so;
 user  root;
 worker_processes auto;
@@ -616,20 +599,15 @@ http
     {
         include       mime.types;
         default_type  application/octet-stream;
-
         server_names_hash_bucket_size 128;
         client_header_buffer_size 32k;
         large_client_header_buffers 4 32k;
         client_max_body_size 50m;
-
         sendfile on;
         sendfile_max_chunk 512k;
         tcp_nopush on;
-
         keepalive_timeout 60;
-
         tcp_nodelay on;
-
         fastcgi_connect_timeout 300;
         fastcgi_send_timeout 300;
         fastcgi_read_timeout 300;
@@ -637,7 +615,6 @@ http
         fastcgi_buffers 4 64k;
         fastcgi_busy_buffers_size 128k;
         fastcgi_temp_file_write_size 256k;
-
         gzip on;
         gzip_min_length  1k;
         gzip_buffers     4 16k;
@@ -647,13 +624,10 @@ http
         gzip_vary on;
         gzip_proxied   expired no-cache no-store private auth;
         gzip_disable   "MSIE [1-6]\.";
-
         #limit_conn_zone $binary_remote_addr zone=perip:10m;
         ##If enable limit_conn_zone,add "limit_conn perip 10;" to server section.
-
         server_tokens off;
         access_log off;
-
 server
     {
         listen 80 default_server reuseport;
@@ -661,39 +635,30 @@ server
         server_name _;
         index index.html index.htm index.php;
         root  /home/wwwroot/default;
-
         #error_page   404   /404.html;
-
         # Deny access to PHP files in specific directory
         #location ~ /(wp-content|uploads|wp-includes|images)/.*\.php\$ { deny all; }
-
         #include enable-php.conf;
-
         location /nginx_status
         {
             stub_status on;
             access_log   off;
         }
-
         location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
         {
             expires      30d;
         }
-
         location ~ .*\.(js|css)?$
         {
             expires      12h;
         }
-
         location ~ /.well-known {
             allow all;
         }
-
         location ~ /\.
         {
             deny all;
         }
-
         access_log  /home/wwwlogs/access.log;
     }
 include vhost/*.conf;
@@ -730,7 +695,7 @@ function remove_php(){
     if [ "$release" == "centos" ]; then
         yum remove -y php7.2-*
     else
-	apt autoremove -y php7.2-*
+    apt autoremove -y php7.2-*
     fi
     cat > /etc/nginx/nginx.conf <<-EOF
 load_module /usr/lib/nginx/modules/ngx_stream_module.so;
@@ -778,20 +743,15 @@ http
     {
         include       mime.types;
         default_type  application/octet-stream;
-
         server_names_hash_bucket_size 128;
         client_header_buffer_size 32k;
         large_client_header_buffers 4 32k;
         client_max_body_size 50m;
-
         sendfile on;
         sendfile_max_chunk 512k;
         tcp_nopush on;
-
         keepalive_timeout 60;
-
         tcp_nodelay on;
-
         gzip on;
         gzip_min_length  1k;
         gzip_buffers     4 16k;
@@ -801,13 +761,10 @@ http
         gzip_vary on;
         gzip_proxied   expired no-cache no-store private auth;
         gzip_disable   "MSIE [1-6]\.";
-
         #limit_conn_zone $binary_remote_addr zone=perip:10m;
         ##If enable limit_conn_zone,add "limit_conn perip 10;" to server section.
-
         server_tokens off;
         access_log off;
-
 server
     {
         listen 80 default_server reuseport;
@@ -815,39 +772,30 @@ server
         server_name _;
         index index.html index.htm index.php;
         root  /home/wwwroot/default;
-
         #error_page   404   /404.html;
-
         # Deny access to PHP files in specific directory
         #location ~ /(wp-content|uploads|wp-includes|images)/.*\.php\$ { deny all; }
-
         #include enable-php.conf;
-
         location /nginx_status
         {
             stub_status on;
             access_log   off;
         }
-
         location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
         {
             expires      30d;
         }
-
         location ~ .*\.(js|css)?$
         {
             expires      12h;
         }
-
         location ~ /.well-known {
             allow all;
         }
-
         location ~ /\.
         {
             deny all;
         }
-
         access_log  /home/wwwlogs/access.log;
     }
 include vhost/*.conf;
@@ -857,12 +805,12 @@ EOF
     green "=============="
 }
 function addSite() {
-	create_cert
-	systemctl stop nginx
-	rm -rf /home/wwwroot/$your_domain
-	rm /etc/nginx/vhost/$your_domain.conf
-	mkdir /home/wwwroot/$your_domain
-	cat > /etc/nginx/vhost/$your_domain.conf <<-EOF
+    create_cert
+    systemctl stop nginx
+    rm -rf /home/wwwroot/$your_domain
+    rm /etc/nginx/vhost/$your_domain.conf
+    mkdir /home/wwwroot/$your_domain
+    cat > /etc/nginx/vhost/$your_domain.conf <<-EOF
 server
     {
         listen 10240 ssl http2;
@@ -870,9 +818,8 @@ server
         server_name $your_domain;
         index index.html index.htm index.php default.html default.htm default.php;
         root  /home/wwwroot/$your_domain;
-
         ssl_certificate /etc/nginx/ssl/$your_domain/fullchain.cer;
-        ssl_certificate_key /etc/nginx/ssl/$your_domain/privkey.key;
+        ssl_certificate_key /etc/nginx/ssl/$your_domain/private.key;
         ssl_session_timeout 5m;
         ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
         ssl_prefer_server_ciphers on;
@@ -880,49 +827,41 @@ server
         ssl_session_cache builtin:1000 shared:SSL:10m;
         # openssl dhparam -out /usr/local/nginx/conf/ssl/dhparam.pem 2048
         #ssl_dhparam /etc/nginx/ssl/dhparam.pem;
-
         include rewrite/typecho.conf;
         #error_page   404   /404.html;
-
         # Deny access to PHP files in specific directory
         #location ~ /(wp-content|uploads|wp-includes|images)/.*\.php$ { deny all; }
-
         include enable-php-pathinfo.conf;
-
         location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
         {
             expires      30d;
         }
-
         location ~ .*\.(js|css)?$
         {
             expires      12h;
         }
-
         location ~ /.well-known {
             allow all;
         }
-
         location ~ /\.
         {
             deny all;
         }
-
         access_log off;
     }
 EOF
-	systemctl start nginx
+    systemctl start nginx
 }
 function removeSite() {
-	green "======================="
-	blue "请输入绑定到本VPS的站名"
-	green "======================="
-	read your_domain
-	systemctl stop nginx
-	rm -rf /home/wwwroot/$your_domain
-	rm -rf /etc/nginx/ssl/$your_domain
-	rm /etc/nginx/vhost/$your_domain.conf
-	systemctl start nginx
+    green "======================="
+    blue "请输入绑定到本VPS的站名"
+    green "======================="
+    read your_domain
+    systemctl stop nginx
+    rm -rf /home/wwwroot/$your_domain
+    rm -rf /etc/nginx/ssl/$your_domain
+    rm /etc/nginx/vhost/$your_domain.conf
+    systemctl start nginx
 }
 function testSpeed() {
     wget vpstest.cn/it && bash it
@@ -962,6 +901,8 @@ start_menu(){
     red " 20. 测速"
     green " 21. 单文件版测速"
     red " 22. 安装BBR-PLUS加速4合一脚本"
+    green " 23. 创建emb3admin.com伪站点"
+    red " 24. 删除emb3admin.com伪站点"
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -984,11 +925,11 @@ start_menu(){
         ;;
     6)
         install_nginx
-	install_trojan 1
+    install_trojan 1
         ;;
     7)
         install_nginx
-	install_trojan 2
+    install_trojan 2
         ;;
     8)
         create_cert 
@@ -1046,7 +987,13 @@ start_menu(){
         testSpeed
         ;;
     22)
-        bbr_boost_sh 
+        bbr_boost_sh
+        ;;
+    23)
+        create_embyserver
+        ;;
+    24)
+        delete_embyserver
         ;;
     0)
         exit 1
