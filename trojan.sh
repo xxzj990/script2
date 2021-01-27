@@ -254,10 +254,10 @@ server {
         listen 10240 ssl http2 default_server;
         server_name www.mb3admin.com mb3admin.com;
         index index.php index.html index.htm default.php default.htm default.html;
-        root /usr/share/nginx/www.mb3admin.com;
+        root /home/wwwroot/www.mb3admin.com;
         #SSL-START SSL相关配置，请勿删除或修改下一行带注释的404规则
-        ssl_certificate    /usr/share/nginx/www.mb3admin.com/fullchain.cer
-        ssl_certificate_key    /usr/share/nginx/www.mb3admin.com/private.key;
+        ssl_certificate    /home/wwwroot/www.mb3admin.com/fullchain.cer;
+        ssl_certificate_key    /home/wwwroot/www.mb3admin.com/private.key;
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
         ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
         ssl_prefer_server_ciphers on;
