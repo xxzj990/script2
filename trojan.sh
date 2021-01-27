@@ -144,11 +144,11 @@ worker_cpu_affinity auto;
 error_log  /home/wwwlogs/nginx_error.log  crit;
 pid        /var/run/nginx.pid;
 #Specifies the value for maximum file descriptors that can be opened by this process.
-worker_rlimit_nofile 51200;
+#worker_rlimit_nofile 51200;
 events
     {
         use epoll;
-        worker_connections 51200;
+        #worker_connections 51200;
         multi_accept off;
         accept_mutex off;
     }
@@ -297,6 +297,7 @@ function delete_embyserver(){
     systemctl start nginx
 }
 function install_trojan(){
+    your_domain=trojan_domain
     create_cert
     sleep 1s
     rm -rf /etc/trojan
@@ -333,7 +334,7 @@ function install_trojan(){
     "local_port": 10241,
     "remote_addr": "127.0.0.1",
     "remote_port": 80,
-    "log_level": 1,
+    "log_level": 3,
     "log_file": "",
     "password": ["$trojan_passwd"],
     "disable_http_check": false,
@@ -464,10 +465,6 @@ function create_cert(){
         red "==========================================================="
         exit 1
     fi
-    green "======================="
-    blue "请输入绑定到本VPS的域名"
-    green "======================="
-    read your_domain
     real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
     local_addr=`curl ipv4.icanhazip.com`
     if [ $real_addr == $local_addr ] ; then
@@ -561,11 +558,11 @@ worker_cpu_affinity auto;
 error_log  /home/wwwlogs/nginx_error.log  crit;
 pid        /var/run/nginx.pid;
 #Specifies the value for maximum file descriptors that can be opened by this process.
-worker_rlimit_nofile 51200;
+#worker_rlimit_nofile 51200;
 events
     {
         use epoll;
-        worker_connections 51200;
+        #worker_connections 51200;
         multi_accept off;
         accept_mutex off;
     }
@@ -705,11 +702,11 @@ worker_cpu_affinity auto;
 error_log  /home/wwwlogs/nginx_error.log  crit;
 pid        /var/run/nginx.pid;
 #Specifies the value for maximum file descriptors that can be opened by this process.
-worker_rlimit_nofile 51200;
+#worker_rlimit_nofile 51200;
 events
     {
         use epoll;
-        worker_connections 51200;
+        #worker_connections 51200;
         multi_accept off;
         accept_mutex off;
     }
@@ -805,6 +802,10 @@ EOF
     green "=============="
 }
 function addSite() {
+    green "======================="
+    blue "请输入绑定到本VPS的站点域名"
+    green "======================="
+    read your_domain
     create_cert
     systemctl stop nginx
     rm -rf /home/wwwroot/$your_domain
@@ -932,6 +933,10 @@ start_menu(){
     install_trojan 2
         ;;
     8)
+        green "======================="
+        blue "请输入绑定到本VPS的站点或Trojan域名"
+        green "======================="
+        read your_domain
         create_cert 
         ;;
     9)
@@ -1006,7 +1011,9 @@ start_menu(){
     start_menu
 }
 green "======================="
-blue "如需按照trojan，请输入绑定到本VPS的trojan域名"
+blue "如需安装trojan，请输入绑定到本VPS的trojan域名"
 green "======================="
 read trojan_domain
+if [ "" = "$trojan_domain" ] ;then
+    trojan_domain="none"
 start_menu
