@@ -532,12 +532,12 @@ function bbr_boost_sh(){
 function install_typecho(){
      addSite
      cd /home/wwwroot/$your_domain
-     wget https://github.com/dzhl/script/raw/master/typecho-1.1-17.10.30-release.zip
-     unzip typecho-1.1-17.10.30-release.zip > /dev/null 2>&1
+     wget https://github.com/dzhl/script/raw/master/typecho.zip
+     unzip typecho.zip > /dev/null 2>&1
      wget https://github.com/BadApple9/speedtest-x/archive/master.zip
      unzip master.zip > /dev/null 2>&1
      mv speedtest-x-master speedtest
-     rm typecho-1.1-17.10.30-release.zip
+     rm typecho.zip
      rm master.zip
      green "=============="
      green "安下载typecho完毕"
@@ -549,7 +549,7 @@ function install_php(){
     green "=============="
     green "开始安装php相关"
     green "=============="
-    $systemPackage -y install php7.2-fpm  php7.2-xml php7.2-xmlrpc php7.2-sqlite3 php7.2-mbstring php-memcached php7.2-curl php7.2-gd
+    $systemPackage -y install php7.2-fpm  php7.2-xml php7.2-xmlrpc php7.2-sqlite3 php7.2-mbstring php-memcached php7.2-curl php7.2-gd php7.2-zip
     cat > /etc/nginx/nginx.conf <<-EOF
 load_module /usr/lib/nginx/modules/ngx_stream_module.so;
 user  root;
