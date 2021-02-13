@@ -133,6 +133,10 @@ systemctl eneable nginx
     mkdir /home/wwwroot/default
     cd /etc/nginx
     wget https://github.com/dzhl/script/raw/master/nginxconf.zip
+    rm -rf /etc/nignx/rewrite
+    rm /etc/nginx/enable-php-pathinfo.conf
+    rm /etc/nginx/enable-php.conf
+    rm /etc/nginx/pathinfo.conf
     unzip nginxconf.zip > /dev/null 2>&1
     rm nginxconf.zip
     cd  /root
@@ -297,7 +301,7 @@ function delete_embyserver(){
     systemctl start nginx
 }
 function install_trojan(){
-    your_domain=trojan_domain
+    your_domain=$trojan_domain
     create_cert
     sleep 1s
     rm -rf /etc/trojan
@@ -469,13 +473,14 @@ function create_cert(){
     local_addr=`curl ipv4.icanhazip.com`
     if [ $real_addr == $local_addr ] ; then
         mkdir /etc/nginx/ssl/$your_domain
+	curl https://get.acme.sh | sh
         ~/.acme.sh/acme.sh  --issue  -d $your_domain  --standalone
         ~/.acme.sh/acme.sh  --installcert  -d  $your_domain   \
             --key-file   /etc/nginx/ssl/$your_domain/private.key \
             --fullchain-file /etc/nginx/ssl/$your_domain/fullchain.cer
         if test -s /etc/nginx/ssl/$your_domain/fullchain.cer; then
             green "证书申请成功"
-        systemctl start nginx
+            systemctl start nginx
         else
             red "申请证书失败"
             systemctl start nginx
