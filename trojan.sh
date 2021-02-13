@@ -1016,4 +1016,5 @@ green "======================="
 read trojan_domain
 if [ "" = "$trojan_domain" ] ;then
     trojan_domain="none"
+fi
 start_menu
