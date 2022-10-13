@@ -3,10 +3,10 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 stty erase ^H
 sh_ver='1.4.2'
-github='https://raw.githubusercontent.com/AmuyangA/public/master'
-new_ver=$(curl -s "${github}"/gcs/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
+github='https://raw.githubusercontent.com/xxzj990/script2/master'
+new_ver=$(curl -s "${github}"/gcs.sh|grep 'sh_ver='|head -1|awk -F '=' '{print $2}'|sed $'s/\'//g')
 if [[ $sh_ver != "${new_ver}" ]]; then
-	wget -qO gcs.sh ${github}/gcs/gcs.sh
+	wget -qO gcs.sh ${github}/gcs.sh
 	exec ./gcs.sh
 fi
 
